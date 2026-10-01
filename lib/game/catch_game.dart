@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 import 'components/faller.dart';
 
@@ -15,20 +16,32 @@ class CatchGame extends FlameGame with DragCallbacks {
   final lives = ValueNotifier<int>(3);
   final status = ValueNotifier<GameStatus>(GameStatus.idle);
 
-  VoidCallback? onGem; // +1 diamante
+  VoidCallback? onGem; // Se atrapó una gema -> +1 diamante
   VoidCallback? onGameOver;
 
   final _rnd = Random();
   double _spawnTimer = 0;
 
-  final basket = TextComponent(
-    text: '🧺',
-    anchor: Anchor.center,
-    textRenderer: TextPaint(style: const TextStyle(fontSize: 64)),
-  );
+  final basket = Basket();
+
+  bool soundOn = true;
+
+  void _sfx(String file) {
+    if (!soundOn) return;
+    try {
+      FlameAudio.play(file);
+    } catch (_) {} // Si el audio falla, el juego continúa normalmente
+  }
 
   @override
-  Future<void> onLoad() async => add(basket);
+  Future<void> onLoad() async {
+    await super.onLoad();
+    add(basket);
+    try {
+      await FlameAudio.audioCache
+          .loadAll(['fruit.wav', 'gem.wav', 'bomb.wav', 'gameover.wav']);
+    } catch (_) {}
+  }
 
   @override
   void onGameResize(Vector2 size) {
@@ -54,10 +67,10 @@ class CatchGame extends FlameGame with DragCallbacks {
 
   @override
   void update(double dt) {
-    if (status.value != GameStatus.playing) return;
+    if (status.value != GameStatus.playing) return; // pausa = no se actualiza
     super.update(dt);
     _spawnTimer += dt;
-    final interval = max(0.35, 1.0 - score.value * 0.01);
+    final interval = max(0.35, 1.0 - score.value * 0.01); // dificultad creciente
     if (_spawnTimer >= interval) {
       _spawnTimer = 0;
       _spawn();
@@ -81,14 +94,19 @@ class CatchGame extends FlameGame with DragCallbacks {
     switch (k) {
       case Kind.fruit:
         score.value += 1;
+        _sfx('fruit.wav');
       case Kind.gem:
         score.value += 5;
+        _sfx('gem.wav');
         onGem?.call();
       case Kind.bomb:
         lives.value -= 1;
         if (lives.value <= 0) {
           status.value = GameStatus.over;
+          _sfx('gameover.wav');
           onGameOver?.call();
+        } else {
+          _sfx('bomb.wav');
         }
     }
   }
@@ -135,5 +153,40 @@ class CatchGame extends FlameGame with DragCallbacks {
     _clear();
     lives.value = 1;
     status.value = GameStatus.playing;
+  }
+}
+
+/// Canasta dibujada con formas (no depende de la fuente de emojis).
+class Basket extends PositionComponent {
+  Basket() : super(size: Vector2(84, 56), anchor: Anchor.center);
+ 
+  @override
+  void render(Canvas canvas) {
+    // cuerpo
+    final body = RRect.fromRectAndCorners(
+      const Rect.fromLTWH(6, 16, 72, 40),
+      bottomLeft: const Radius.circular(20),
+      bottomRight: const Radius.circular(20),
+      topLeft: const Radius.circular(4),
+      topRight: const Radius.circular(4),
+    );
+    canvas.drawRRect(body, Paint()..color = const Color(0xFFD9954B));
+ 
+    // trenzado
+    final weave = Paint()
+      ..color = const Color(0xFF9C6226)
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+    for (double x = 20; x < 78; x += 16) {
+      canvas.drawLine(Offset(x, 20), Offset(x, 54), weave);
+    }
+    canvas.drawLine(const Offset(8, 34), const Offset(76, 34), weave);
+    canvas.drawLine(const Offset(12, 46), const Offset(72, 46), weave);
+ 
+    // borde superior
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(const Rect.fromLTWH(0, 8, 84, 14), const Radius.circular(7)),
+      Paint()..color = const Color(0xFF8D5524),
+    );
   }
 }

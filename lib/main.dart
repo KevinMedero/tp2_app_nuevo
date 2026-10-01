@@ -21,7 +21,7 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListenableBuilder(
         listenable: profile,
-        builder: (_, __) => MaterialApp(
+        builder: (_, _) => MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'Atrapa Gemas',
           theme: _theme(Brightness.light),

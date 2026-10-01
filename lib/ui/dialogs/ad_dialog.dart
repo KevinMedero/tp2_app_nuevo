@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 
 /// Publicidad simulada (modal con cuenta regresiva).
 class AdDialog extends StatefulWidget {
@@ -9,12 +10,21 @@ class AdDialog extends StatefulWidget {
 }
 
 class _AdDialogState extends State<AdDialog> {
+  late final VideoPlayerController vc;
+  bool ready = false;
   int s = 5;
   Timer? t;
 
   @override
   void initState() {
     super.initState();
+    vc = VideoPlayerController.asset('assets/video/ad.mp4');
+    vc.initialize().then((_) {
+      if (!mounted) return;
+      setState(() => ready = true);
+      vc.play();
+    }).catchError((_) {}); // si falla, se ve el anuncio de texto
+
     t = Timer.periodic(const Duration(seconds: 1), (_) {
       if (s > 0) setState(() => s--);
     });
@@ -23,6 +33,7 @@ class _AdDialogState extends State<AdDialog> {
   @override
   void dispose() {
     t?.cancel();
+    vc.dispose(); // importante: libera el video
     super.dispose();
   }
 
@@ -31,17 +42,22 @@ class _AdDialogState extends State<AdDialog> {
         canPop: false,
         child: AlertDialog(
           title: const Text('📺 Publicidad'),
-          content: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Colors.orange, Colors.pink]),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Text(
-              '🥤 ¡Super Jugo Mágico!\nEl favorito de los campeones.\n(anuncio de mentira)',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+          content: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: ready
+                ? AspectRatio(
+                    aspectRatio: vc.value.aspectRatio,
+                    child: VideoPlayer(vc),
+                  )
+                : Container(
+                    padding: const EdgeInsets.all(20),
+                    color: Colors.orange,
+                    child: const Text(
+                      '🥤 ¡Super Jugo Mágico!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                  ),
           ),
           actions: [
             TextButton(

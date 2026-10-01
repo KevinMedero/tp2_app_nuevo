@@ -15,7 +15,7 @@ class ControlsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<GameStatus>(
       valueListenable: game.status,
-      builder: (_, st, __) => Wrap(
+      builder: (_, st, _) => Wrap(
         alignment: WrapAlignment.center,
         spacing: 8,
         runSpacing: 8,

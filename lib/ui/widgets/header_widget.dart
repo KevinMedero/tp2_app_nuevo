@@ -19,7 +19,7 @@ class HeaderWidget extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return ListenableBuilder(
       listenable: profile,
-      builder: (_, __) => Card(
+      builder: (_, _) => Card(
         color: cs.primaryContainer,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Padding(
@@ -49,12 +49,12 @@ class HeaderWidget extends StatelessWidget {
             Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
               ValueListenableBuilder<int>(
                 valueListenable: game.score,
-                builder: (_, s, __) => Text('⭐ $s', style: const TextStyle(fontSize: 18)),
+                builder: (_, s, _) => Text('⭐ $s', style: const TextStyle(fontSize: 18)),
               ),
               Text('🏆 ${profile.best}', style: const TextStyle(fontSize: 18)),
               ValueListenableBuilder<int>(
                 valueListenable: game.lives,
-                builder: (_, l, __) =>
+                builder: (_, l, _) =>
                     Text('❤️' * l.clamp(0, 3), style: const TextStyle(fontSize: 18)),
               ),
               Text('💎 ${profile.diamonds}', style: const TextStyle(fontSize: 18)),
