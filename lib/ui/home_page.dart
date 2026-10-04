@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import '../game/catch_game.dart';
 import '../models/profile.dart';
 import 'dialogs/ad_dialog.dart';
+import 'dialogs/game_over_dialog.dart';
+import 'dialogs/shop_modal.dart';
 import 'widgets/controls_widget.dart';
 import 'widgets/header_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage(this.profile, {super.key});
   final Profile profile;
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -33,36 +36,25 @@ class _HomePageState extends State<HomePage> {
   Future<void> _showAd() async {
     if (p.pro) return;
     await showDialog(
-        context: context, barrierDismissible: false, builder: (_) => const AdDialog());
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const AdDialog());
   }
 
   void _gameOver() {
-    p.setBest(game.score.value);
+    final score = game.score.value;
+    final isRecord = score > p.best; // se calcula antes de guardar el récord
+    p.setBest(score);
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: const Text('¡Game over! 😢'),
-        content: Text('Puntos: ${game.score.value}\nRécord: ${p.best}'),
-        actions: [
-          if (p.diamonds >= 5)
-            TextButton(
-              onPressed: () {
-                if (p.spend(5)) {
-                  Navigator.pop(ctx);
-                  game.revive();
-                }
-              },
-              child: const Text('❤️ Revivir (5 💎)'),
-            ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _restart();
-            },
-            child: const Text('Jugar otra vez'),
-          ),
-        ],
+      builder: (_) => GameOverDialog(
+        game: game,
+        profile: p,
+        score: score,
+        isRecord: isRecord,
+        onRestart: _restart,
       ),
     );
   }
@@ -91,44 +83,10 @@ class _HomePageState extends State<HomePage> {
     game.pause();
     showModalBottomSheet(
       context: context,
-      builder: (ctx) {
-        Widget pack(int n, String price) => ListTile(
-              leading: const Text('💎', style: TextStyle(fontSize: 28)),
-              title: Text('$n diamantes'),
-              trailing: FilledButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _pay('$n 💎', () => p.addDiamonds(n));
-                },
-                child: Text(price),
-              ),
-            );
-        return SafeArea(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('🛒 Tienda', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            ),
-            pack(10, '\$0.99'),
-            pack(50, '\$3.99'),
-            pack(120, '\$7.99'),
-            const Divider(),
-            ListTile(
-              leading: const Text('👑', style: TextStyle(fontSize: 28)),
-              title: const Text('Cuenta PRO (sin anuncios)'),
-              trailing: p.pro
-                  ? const Text('¡Activa!')
-                  : FilledButton(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        _pay('Cuenta PRO', p.setPro);
-                      },
-                      child: const Text('\$4.99'),
-                    ),
-            ),
-          ]),
-        );
-      },
+      builder: (_) => ShopModal(
+        profile: p,
+        onPay: _pay,
+      ),
     );
   }
 

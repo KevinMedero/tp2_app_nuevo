@@ -51,7 +51,15 @@ class HeaderWidget extends StatelessWidget {
                 valueListenable: game.score,
                 builder: (_, s, _) => Text('⭐ $s', style: const TextStyle(fontSize: 18)),
               ),
-              Text('🏆 ${profile.best}', style: const TextStyle(fontSize: 18)),
+              //Text('🏆 ${profile.best}', style: const TextStyle(fontSize: 18)),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.emoji_events, color: Colors.amber, size: 22),
+                  const SizedBox(width: 4),
+                  Text('${profile.best}', style: const TextStyle(fontSize: 18)),
+                ],
+              ),
               ValueListenableBuilder<int>(
                 valueListenable: game.lives,
                 builder: (_, l, _) =>
