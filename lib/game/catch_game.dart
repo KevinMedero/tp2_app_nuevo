@@ -6,12 +6,15 @@ import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 import 'components/faller.dart';
 
+// Estados posibles del flujo del juego
 enum GameStatus { idle, playing, paused, over }
 
+// Tipos de objetos que pueden caer
 enum Kind { fruit, gem, bomb }
 
-/// Juego hecho con Flame. Todo se controla externamente con Flutter.
+/// Motor principal del juego con Flame (gestionado desde la UI de Flutter)
 class CatchGame extends FlameGame with DragCallbacks {
+  // Notificadores de estado
   final score = ValueNotifier<int>(0);
   final lives = ValueNotifier<int>(3);
   final status = ValueNotifier<GameStatus>(GameStatus.idle);
@@ -22,10 +25,13 @@ class CatchGame extends FlameGame with DragCallbacks {
   final _rnd = Random();
   double _spawnTimer = 0;
 
+  // Componente visual de la canasta
   final basket = Basket();
 
+  // Control global del estado del sonido
   bool soundOn = true;
 
+  // Reproduce un efecto de sonido de forma segura
   void _sfx(String file) {
     if (!soundOn) return;
     try {
@@ -38,6 +44,7 @@ class CatchGame extends FlameGame with DragCallbacks {
     await super.onLoad();
     add(basket);
     try {
+      // Precarga los archivos de audio en memoria para evitar lag
       await FlameAudio.audioCache
           .loadAll(['fruit.wav', 'gem.wav', 'bomb.wav', 'gameover.wav']);
     } catch (_) {}
@@ -46,12 +53,14 @@ class CatchGame extends FlameGame with DragCallbacks {
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
+    // Reposiciona la canasta al ajustar el tamaño de pantalla
     final x = basket.x == 0 ? size.x / 2 : basket.x.clamp(32.0, size.x - 32);
     basket.position = Vector2(x.toDouble(), size.y - 50);
   }
 
   @override
   void render(Canvas canvas) {
+    // Dibuja el fondo con un degradado dinámico
     final r = Rect.fromLTWH(0, 0, size.x, size.y);
     canvas.drawRect(
       r,
@@ -69,27 +78,33 @@ class CatchGame extends FlameGame with DragCallbacks {
   void update(double dt) {
     if (status.value != GameStatus.playing) return; // pausa = no se actualiza
     super.update(dt);
+
+    // Controla la frecuencia de caída según el puntaje (dificultad progresiva)
     _spawnTimer += dt;
-    final interval = max(0.35, 1.0 - score.value * 0.01); // dificultad creciente
+    final interval = max(0.35, 1.0 - score.value * 0.01);
     if (_spawnTimer >= interval) {
       _spawnTimer = 0;
       _spawn();
     }
   }
 
+  // Genera un nuevo objeto que cae desde la parte superior
   void _spawn() {
     final r = _rnd.nextDouble();
+    // Probabilidades: 15% bomba, 15% gema, 70% fruta
     final kind = r < 0.15 ? Kind.bomb : (r < 0.30 ? Kind.gem : Kind.fruit);
     final emoji = switch (kind) {
       Kind.bomb => '💣',
       Kind.gem => '💎',
       Kind.fruit => const ['🍎', '🍌', '🍇', '🍓', '🍉'][_rnd.nextInt(5)],
     };
+    // Calcula una velocidad aleatoria que escala según la puntuación
     final speed = 140 + score.value * 2.0 + _rnd.nextDouble() * 80;
     add(Faller(kind, emoji, speed)
       ..position = Vector2(30 + _rnd.nextDouble() * (size.x - 60), -30));
   }
 
+  // Maneja la colisión cuando la canasta atrapa un elemento
   void caught(Kind k) {
     switch (k) {
       case Kind.fruit:

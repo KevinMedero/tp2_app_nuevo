@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../game/catch_game.dart';
 import '../../models/profile.dart';
 
+/// Diálogo modal que se muestra al perder la partida
 class GameOverDialog extends StatelessWidget {
   final CatchGame game;
   final Profile profile;
@@ -20,6 +21,7 @@ class GameOverDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // PopScope bloquea el gesto de retroceso o botón "Atrás" de Android para obligar a interactuar con los botones
     return PopScope(
       canPop: false, // evita cerrarlo con el botón "atrás"
       child: AlertDialog(
@@ -31,6 +33,7 @@ class GameOverDialog extends StatelessWidget {
               'PUNTOS',
               style: TextStyle(letterSpacing: 3, fontWeight: FontWeight.bold),
             ),
+            // Anima el conteo numérico de los puntos desde 0 hasta la puntuación final alcanzada
             TweenAnimationBuilder<int>(
               tween: IntTween(begin: 0, end: score),
               duration: const Duration(milliseconds: 900),
@@ -40,6 +43,7 @@ class GameOverDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
+            // Muestra un distintivo destacado si superó el récord anterior o el récord actual en caso contrario
             if (isRecord)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -74,6 +78,7 @@ class GameOverDialog extends StatelessWidget {
           ],
         ),
         actions: [
+          // Opción condicional: permite revivir si el jugador tiene suficiente saldo de diamantes
           if (profile.diamonds >= 5)
             TextButton(
               onPressed: () {
@@ -84,6 +89,7 @@ class GameOverDialog extends StatelessWidget {
               },
               child: const Text('❤️ Revivir (5 💎)'),
             ),
+          // Botón principal para reiniciar la partida desde cero
           FilledButton(
             onPressed: () {
               Navigator.pop(context);

@@ -8,6 +8,7 @@ import 'dialogs/shop_modal.dart';
 import 'widgets/controls_widget.dart';
 import 'widgets/header_widget.dart';
 
+/// Pantalla principal que integra la interfaz de usuario de Flutter con el motor de juego Flame
 class HomePage extends StatefulWidget {
   const HomePage(this.profile, {super.key});
   final Profile profile;
@@ -17,22 +18,25 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final game = CatchGame();
-  Profile get p => widget.profile;
+  final game = CatchGame();        // Instancia única del motor del juego
+  Profile get p => widget.profile; // Getter auxiliar para acceder más fácil al perfil del usuario
 
   @override
   void initState() {
     super.initState();
+    // Suscripción a eventos del juego para actualizar datos del perfil y mostrar modales
     game.onGem = () => p.addDiamonds(1);
     game.onGameOver = _gameOver;
   }
 
+  // Detiene la partida actual, muestra un anuncio publicitario y reinicia el juego
   Future<void> _restart() async {
     game.pause();
     await _showAd();
     if (mounted) game.start();
   }
 
+  // Muestra el diálogo de publicidad solo si el usuario no tiene cuenta PRO
   Future<void> _showAd() async {
     if (p.pro) return;
     await showDialog(
@@ -41,9 +45,10 @@ class _HomePageState extends State<HomePage> {
         builder: (_) => const AdDialog());
   }
 
+  // Despliega el diálogo modal de fin de juego y evalúa si se superó el récord
   void _gameOver() {
     final score = game.score.value;
-    final isRecord = score > p.best; // se calcula antes de guardar el récord
+    final isRecord = score > p.best; // Determina si es un nuevo récord antes de actualizar el perfil
     p.setBest(score);
 
     showDialog(
@@ -59,6 +64,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Simula el procesamiento de una compra en la tienda con una espera de red ficticia
   Future<void> _pay(String label, VoidCallback onOk) async {
     showDialog(
       context: context,
@@ -74,11 +80,12 @@ class _HomePageState extends State<HomePage> {
     await Future.delayed(const Duration(milliseconds: 1200));
     if (!mounted) return;
     Navigator.pop(context);
-    onOk();
+    onOk(); // Ejecuta la acción de la compra (sumar diamantes o activar PRO)
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text('✅ Compra exitosa: $label')));
   }
 
+  // Pausa el juego y abre el modal desplegable de la tienda
   void _openShop() {
     game.pause();
     showModalBottomSheet(
@@ -97,12 +104,14 @@ class _HomePageState extends State<HomePage> {
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(children: [
+            // Encabezado con datos del jugador y marcadores en tiempo real
             HeaderWidget(
               profile: p,
               game: game,
               onOpenShop: _openShop,
             ),
             const SizedBox(height: 10),
+            // Contenedor principal donde se renderiza el canvas del juego Flame
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(28),
@@ -110,6 +119,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: 10),
+            // Panel inferior con los botones de control de la partida
             ControlsWidget(
               game: game,
               onRestart: _restart,

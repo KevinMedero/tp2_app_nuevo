@@ -39,7 +39,7 @@ class _AdDialogState extends State<AdDialog> {
 
   @override
   Widget build(BuildContext context) => PopScope(
-        canPop: false,
+        canPop: false,  // PopScope bloquea el gesto de retroceso o botón "Atrás" de Android para obligar a interactuar con los botones
         child: AlertDialog(
           title: const Text('📺 Publicidad'),
           content: ClipRRect(
